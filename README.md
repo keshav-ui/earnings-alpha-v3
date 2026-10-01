@@ -8,7 +8,8 @@ Entries are allowed after an earnings announcement in after-hours or pre-market.
 
 ## Included
 
-- FastAPI dashboard and JSON API; manual **EXIT NOW** paper exit
+- Full responsive analysis dashboard with symbol input, session selection, configurable target/stop, factor explanation, trade plan, positions and manual **EXIT NOW**
+- Persistent automatic watchlist that checks every 10 seconds, detects a newly published result, compares actual EPS/revenue with consensus, reads normalized guidance/commentary, and refreshes price/spread/volume analysis
 - Provider adapter contracts for market data/order flow, earnings consensus, SEC/XBRL, and transcripts/news
 - Deterministic replay/mock provider whenever credentials are absent
 - Historical JSONL event ingestion and leakage-safe feature snapshots
@@ -31,6 +32,9 @@ Open http://localhost:8000. The app seeds one replay event and runs only in pape
 ```bash
 curl http://localhost:8000/health
 curl http://localhost:8000/api/events
+curl -X POST http://localhost:8000/api/analyze \
+  -H 'content-type: application/json' \
+  -d '{"symbol":"NVDA","session":"after_market","target_pct":0.055,"stop_pct":0.035}'
 curl -X POST http://localhost:8000/api/positions \
   -H 'content-type: application/json' \
   -d '{"event_id":1,"side":"LONG","quantity":10}'
@@ -40,6 +44,10 @@ curl -X POST http://localhost:8000/api/positions/1/exit -H 'content-type: applic
 ## Data providers and credentials
 
 `MARKET_DATA_API_KEY`, `EARNINGS_API_KEY`, and `TRANSCRIPT_API_KEY` are optional. Their adapters deliberately raise a clear configuration error until an authenticated provider-specific implementation is completed. SEC data is public, but requests must include `SEC_USER_AGENT` (name/email) and obey SEC rate limits. No credentials are included or fabricated.
+
+For licensed live monitoring, configure `MASSIVE_API_KEY` plus a normalized earnings gateway using `EARNINGS_RESULTS_URL` (include `{symbol}` in the URL) and `EARNINGS_API_KEY`. The result JSON must contain `actual_eps`, `estimated_eps`, `actual_revenue`, `estimated_revenue`, and `announced_at`; it may also contain `guidance_score`, `commentary`, and `source`. Optional transcript/news uses `TRANSCRIPT_NEWS_URL` and `TRANSCRIPT_API_KEY`. The dashboard reports every channel as LIVE or REPLAY and never labels fallback data as live.
+
+The 10-second interval is an application polling target, not a guarantee that an upstream publisher or plan delivers within 10 seconds. Exchange market-data entitlements and earnings/news feed licensing determine actual latency.
 
 The `ReplayProvider` is used automatically when an adapter cannot be authenticated. It is deterministic and suitable only for demonstrations/tests — it is not market data.
 
