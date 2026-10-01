@@ -2,6 +2,7 @@ services:
   - type: web
     name: earnings-alpha-v3
     runtime: docker
+    plan: free
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
@@ -16,4 +17,4 @@ services:
         generateValue: true
 databases:
   - name: earnings-alpha-db
-    plan: starter
+    plan: free
